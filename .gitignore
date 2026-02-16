@@ -1,0 +1,65 @@
+# ============================
+# ARCHIVOS DEL SISTEMA
+# ============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================
+# ARCHIVOS DE XAMPP / PHP
+# ============================
+/xampp/
+/tmp/
+/logs/
+/sessions/
+
+# ============================
+# CONFIGURACIONES LOCALES
+# ============================
+/.env
+/.env.local
+/.env.*.local
+config.php
+config.local.php
+
+# ============================
+# COMPOSER (si lo usas)
+# ============================
+/vendor/
+/composer.lock
+
+# ============================
+# NODE (si usas npm)
+# ============================
+/node_modules/
+/npm-debug.log
+/yarn-error.log
+
+# ============================
+# ARCHIVOS DE CACHE
+# ============================
+/cache/
+/storage/cache/
+/storage/logs/
+
+# ============================
+# ARCHIVOS DE IDEs
+# ============================
+.vscode/
+.idea/
+*.code-workspace
+
+# ============================
+# ARCHIVOS TEMPORALES
+# ============================
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# ============================
+# ARCHIVOS DE SUBIDAS (si no quieres subirlos)
+# ============================
+/uploads/
+/images/uploads/
