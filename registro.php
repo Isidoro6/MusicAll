@@ -1,149 +1,206 @@
+<?php
+require_once __DIR__ . '/db.php';
+
+$errors = [];
+$success = null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $email    = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    if ($username === '' || mb_strlen($username) < 3) {
+        $errors[] = "El usuario debe tener al menos 3 caracteres.";
+    }
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "El correo no es válido.";
+    }
+    if ($password === '' || strlen($password) < 6) {
+        $errors[] = "La contraseña debe tener al menos 6 caracteres.";
+    }
+
+    if (!$errors) {
+        // Comprobar duplicados
+        $check = $conn->prepare("SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1");
+        $check->bind_param("ss", $username, $email);
+        $check->execute();
+        $res = $check->get_result();
+        if ($res && $res->num_rows > 0) {
+            $errors[] = "Ese usuario o correo ya está registrado.";
+        }
+        $check->close();
+    }
+
+    if (!$errors) {
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+
+        $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $username, $email, $hash);
+
+        if ($stmt->execute()) {
+            $success = "Usuario creado correctamente. Ya puedes iniciar sesión.";
+        } else {
+            $errors[] = "Error al registrar: " . $conn->error;
+        }
+        $stmt->close();
+    }
+}
+?>
+
+
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
-        crossorigin="anonymous">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro | MusicAll</title>
 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+          crossorigin="anonymous">
+
+    <style>
+        :root{
+            --bg1: hsl(218, 41%, 15%);
+            --t1: hsl(218, 81%, 95%);
+            --t2: hsl(218, 81%, 75%);
+            --soft: hsl(218, 81%, 85%);
+        }
+
+        body{
+            min-height: 100vh;
+            background-color: var(--bg1);
+            background-image:
+                radial-gradient(650px circle at 0% 0%,
+                    hsl(218, 41%, 35%) 15%,
+                    hsl(218, 41%, 30%) 35%,
+                    hsl(218, 41%, 20%) 75%,
+                    hsl(218, 41%, 19%) 80%,
+                    transparent 100%),
+                radial-gradient(1250px circle at 100% 100%,
+                    hsl(218, 41%, 45%) 15%,
+                    hsl(218, 41%, 41%, 30%) 35%,
+                    hsl(218, 41%, 20%) 75%,
+                    hsl(218, 41%, 19%) 80%,
+                    transparent 100%);
+            background-attachment: fixed;
+        }
+
+        #radius-shape-1 {
+            height: 220px;
+            width: 220px;
+            top: -60px;
+            left: -130px;
+            background: radial-gradient(#44006b, #ad1fff);
+            overflow: hidden;
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        #radius-shape-2 {
+            border-radius: 38% 62% 63% 37% / 70% 33% 67% 30%;
+            bottom: -60px;
+            right: -110px;
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(#44006b, #ad1fff);
+            overflow: hidden;
+            position: absolute;
+        }
+
+        .bg-glass {
+            background-color: hsla(0, 0%, 100%, 0.92) !important;
+            backdrop-filter: saturate(200%) blur(25px);
+            border: 1px solid rgba(255,255,255,.35);
+        }
+
+        .hero-title{ color: var(--t1); }
+        .hero-title span{ color: var(--t2); }
+        .text-soft{ color: var(--soft); }
+
+        .page{
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+    </style>
 </head>
 
 <body>
+<section class="page position-relative overflow-hidden">
+    <div id="radius-shape-1"></div>
+    <div id="radius-shape-2"></div>
 
-
-    <!-- Section: Design Block -->
-    <section class="background-radial-gradient overflow-hidden">
-        <style>
-            section.background-radial-gradient { min-height: 100vh; }
-            .background-radial-gradient {
-                background-color: hsl(218, 41%, 15%);
-                background-image: radial-gradient(650px circle at 0% 0%,
-                        hsl(218, 41%, 35%) 15%,
-                        hsl(218, 41%, 30%) 35%,
-                        hsl(218, 41%, 20%) 75%,
-                        hsl(218, 41%, 19%) 80%,
-                        transparent 100%),
-                    radial-gradient(1250px circle at 100% 100%,
-                        hsl(218, 41%, 45%) 15%,
-                        hsl(218, 41%, 30%) 35%,
-                        hsl(218, 41%, 20%) 75%,
-                        hsl(218, 41%, 19%) 80%,
-                        transparent 100%);
-            }
-
-            #radius-shape-1 {
-                height: 220px;
-                width: 220px;
-                top: -60px;
-                left: -130px;
-                background: radial-gradient(#44006b, #ad1fff);
-                overflow: hidden;
-            }
-
-            #radius-shape-2 {
-                border-radius: 38% 62% 63% 37% / 70% 33% 67% 30%;
-                bottom: -60px;
-                right: -110px;
-                width: 300px;
-                height: 300px;
-                background: radial-gradient(#44006b, #ad1fff);
-                overflow: hidden;
-            }
-
-            .bg-glass {
-                background-color: hsla(0, 0%, 100%, 0.9) !important;
-                backdrop-filter: saturate(200%) blur(25px);
-            }
-        </style>
-        <div class="container px-4 py-5 px-md-5 text-center text-lg-start my-5 d-flex align-items-center" style="min-height: 100vh;">
-        <div class="container px-4 py-5 px-md-5 text-center text-lg-start my-5">
-            <div class="row gx-lg-5 align-items-center mb-5">
-                <div class="col-lg-6 mb-5 mb-lg-0" style="z-index: 10">
-                    <h1 class="my-5 display-5 fw-bold ls-tight" style="color: hsl(218, 81%, 95%)">
-                        Regístrate <br />
-                        <span style="color: hsl(218, 81%, 75%)">en MusicAll</span>
-                    </h1>
-                    <p class="mb-4 opacity-70" style="color: hsl(218, 81%, 85%)">
-                        Comienza a disfrutar de tu música favorita en cualquier momento y lugar.
-                        Regístrate ahora para acceder a una amplia biblioteca de canciones,
-                        crear tus propias listas de reproducción y descubrir nuevos artistas.
-                        ¡Únete a la comunidad de amantes de la música en MusicAll hoy mismo!
-                    </p>
+    <div class="container px-4 py-5 px-md-5">
+        <div class="row gx-lg-5 align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0" style="z-index:10;">
+                <h1 class="display-5 fw-bold hero-title">
+                    Regístrate <br><span>en MusicAll</span>
+                </h1>
+                <p class="opacity-75 text-soft mb-4">
+                    Crea tu cuenta para acceder a la plataforma.
+                </p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a class="btn btn-outline-light" href="index.php">Volver al inicio</a>
+                    <a class="btn btn-primary" href="iniciarSesion.php">Ya tengo cuenta</a>
                 </div>
+            </div>
 
-                <div class="col-lg-6 mb-5 mb-lg-0 position-relative">
-                    <div id="radius-shape-1" class="position-absolute rounded-circle shadow-5-strong"></div>
-                    <div id="radius-shape-2" class="position-absolute shadow-5-strong"></div>
+            <div class="col-lg-6" style="z-index:10;">
+                <div class="card bg-glass shadow">
+                    <div class="card-body p-4 p-md-5">
+                        <h2 class="h4 fw-semibold mb-3">Crear cuenta</h2>
 
-                    <div class="card bg-glass">
-                        <div class="card-body px-4 py-5 px-md-5">
-                            <form>
-                                <!-- 2 column grid layout with text inputs for the first and last names -->
-                                <div class="row">
-                                    <div class="col-md-6 mb-4">
-                                        <div data-mdb-input-init class="form-outline">
-                                            <input type="text" id="form3Example1" class="form-control" />
-                                            <label class="form-label" for="form3Example1">Elige tu nombre de usuario</label>
-                                        </div>
-                                    </div>
-                                </div>
+                        <?php if ($errors): ?>
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    <?php foreach ($errors as $e): ?>
+                                        <li><?= htmlspecialchars($e) ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        <?php endif; ?>
 
-                                <!-- Email input -->
-                                <div data-mdb-input-init class="form-outline mb-4">
-                                    <input type="email" id="form3Example3" class="form-control" />
-                                    <label class="form-label" for="form3Example3">Correo electrónico</label>
-                                </div>
+                        <?php if ($success): ?>
+                            <div class="alert alert-success">
+                                <?= htmlspecialchars($success) ?>
+                            </div>
+                        <?php endif; ?>
 
-                                <!-- Password input -->
-                                <div data-mdb-input-init class="form-outline mb-4">
-                                    <input type="password" id="form3Example4" class="form-control" />
-                                    <label class="form-label" for="form3Example4">Contraseña</label>
-                                </div>
+                        <form method="post" action="registro.php" autocomplete="off">
+                            <div class="mb-3">
+                                <label class="form-label" for="username">Nombre de usuario</label>
+                                <input type="text" id="username" name="username" class="form-control"
+                                       value="<?= htmlspecialchars($_POST['username'] ?? '') ?>" required>
+                            </div>
 
-                                <!-- Checkbox 
-                                <div class="form-check d-flex justify-content-center mb-4">
-                                    <input class="form-check-input me-2" type="checkbox" value="" id="form2Example33" checked />
-                                    <label class="form-check-label" for="form2Example33">
-                                        Subscribe to our newsletter
-                                    </label>
-                                </div> -->
+                            <div class="mb-3">
+                                <label class="form-label" for="email">Correo electrónico</label>
+                                <input type="email" id="email" name="email" class="form-control"
+                                       value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
+                            </div>
 
-                                <!-- Submit button -->
-                                <button type="submit" data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-block mb-4">
-                                    Regístrate
-                                </button>
+                            <div class="mb-4">
+                                <label class="form-label" for="password">Contraseña</label>
+                                <input type="password" id="password" name="password" class="form-control" required>
+                            </div>
 
-                                <!-- Register buttons 
-                                <div class="text-center">
-                                    <p>or sign   up with:</p>
-                                    <button type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-link btn-floating mx-1">
-                                        <i class="fab fa-facebook-f"></i>
-                                    </button>
+                            <button type="submit" class="btn btn-primary w-100">
+                                Registrarme
+                            </button>
+                        </form>
 
-                                    <button type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-link btn-floating mx-1">
-                                        <i class="fab fa-google"></i>
-                                    </button>
-
-                                    <button type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-link btn-floating mx-1">
-                                        <i class="fab fa-twitter"></i>
-                                    </button>
-
-                                    <button type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-link btn-floating mx-1">
-                                        <i class="fab fa-github"></i>
-                                    </button>
-                                </div>-->
-                            </form>
-                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-    <!-- Section: Design Block -->
-</body>
 
+        </div>
+    </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+</body>
 </html>
