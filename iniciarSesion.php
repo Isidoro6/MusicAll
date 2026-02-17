@@ -22,17 +22,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$user || !password_verify($password, $user['password'])) {
             $errors[] = "Usuario o contraseña incorrectos.";
         } else {
-            // Login OK
-            $_SESSION['user'] = [
-                'id' => (int)$user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-                'role' => $user['role']
-            ];
+            // ✅ Si es admin, NO le dejamos entrar por el login de usuarios
+            if (($user['role'] ?? 'user') === 'admin') {
+                $errors[] = "Este acceso es solo para usuarios. Usa el acceso de administrador.";
+            } else {
+                // Login usuario normal OK
+                $_SESSION['user'] = [
+                    'id' => (int)$user['id'],
+                    'username' => $user['username'],
+                    'email' => $user['email'],
+                    'role' => $user['role']
+                ];
 
-
-            header("Location: index.php");
-            exit;
+                header("Location: index.php");
+                exit;
+            }
         }
     }
 }
@@ -134,11 +138,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="row gx-lg-5 align-items-center">
                 <div class="col-lg-6 mb-5 mb-lg-0" style="z-index:10;">
                     <h1 class="display-5 fw-bold hero-title">
-                        Entra a <br><span>MusicAll</span>
+                        Inicia sesión<br><span>en MusicAll</span>
                     </h1>
                     <p class="opacity-75 text-soft mb-4">
                         Accede con tu usuario y contraseña.
                     </p>
+
                     <div class="d-flex gap-2 flex-wrap">
                         <a class="btn btn-outline-light" href="index.php">Volver al inicio</a>
                         <a class="btn btn-primary" href="registro.php">Crear cuenta</a>
@@ -148,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-lg-6" style="z-index:10;">
                     <div class="card bg-glass shadow">
                         <div class="card-body p-4 p-md-5">
-                            <h2 class="h4 fw-semibold mb-3">Iniciar sesión</h2>
+                            <h2 class="h4 fw-semibold mb-3">Login de usuarios</h2>
 
                             <?php if ($errors): ?>
                                 <div class="alert alert-danger">
@@ -167,15 +172,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         value="<?= htmlspecialchars($_POST['username'] ?? '') ?>" required>
                                 </div>
 
-                                <div class="mb-4">
+                                <div class="mb-3">
                                     <label class="form-label" for="password">Contraseña</label>
                                     <input type="password" id="password" name="password" class="form-control" required>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary w-100">
+                                <button type="submit" class="btn btn-primary w-100 mb-3">
                                     Entrar
                                 </button>
                             </form>
+
+                            <!-- ✅ Enlace a login admin -->
+                            <div class="text-center">
+                                <a href="admin/login.php" class="text-decoration-none fw-semibold">
+                                    ¿Eres administrador?
+                                </a>
+                            </div>
 
                         </div>
                     </div>
@@ -186,7 +198,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </section>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
         crossorigin="anonymous"></script>
 </body>
 
