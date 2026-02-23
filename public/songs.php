@@ -1,10 +1,28 @@
 <?php
 session_start();
-require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../db.php';
 
-$artists = [];
-$res = $conn->query("SELECT id, name, image_url FROM artists ORDER BY name ASC");
-if ($res) $artists = $res->fetch_all(MYSQLI_ASSOC);
+$genres = [];
+$res = $conn->query("SELECT DISTINCT genre FROM songs WHERE genre IS NOT NULL AND genre <> '' ORDER BY genre ASC");
+if ($res) $genres = array_map(fn($r) => $r['genre'], $res->fetch_all(MYSQLI_ASSOC));
+
+$genre = trim($_GET['genre'] ?? '');
+$q = trim($_GET['q'] ?? '');
+
+$songs = [];
+$res = $conn->query("
+  SELECT
+    s.id, s.title,
+    ar.name AS artist_name,
+    al.title AS album_title,
+    COALESCE(s.image_url, al.cover_url, ar.image_url) AS display_image
+  FROM songs s
+  JOIN artists ar ON ar.id = s.artist_id
+  LEFT JOIN albums al ON al.id = s.album_id
+  ORDER BY s.created_at DESC
+  LIMIT 60
+");
+if ($res) $songs = $res->fetch_all(MYSQLI_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -12,7 +30,7 @@ if ($res) $artists = $res->fetch_all(MYSQLI_ASSOC);
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Artistas | MusicAll</title>
+    <title>Canciones | MusicAll</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
     <style>
         :root {
@@ -45,12 +63,12 @@ if ($res) $artists = $res->fetch_all(MYSQLI_ASSOC);
         }
 
         .media-card img {
-            height: 180px;
+            height: 160px;
             object-fit: cover;
         }
 
         .media-placeholder {
-            height: 180px;
+            height: 160px;
             background: rgba(0, 0, 0, .05);
             display: flex;
             align-items: center;
@@ -65,30 +83,34 @@ if ($res) $artists = $res->fetch_all(MYSQLI_ASSOC);
     <nav class="navbar navbar-dark bg-dark py-3">
         <div class="container">
             <a class="navbar-brand" href="index.php">MusicAll</a>
-            <a class="btn btn-outline-light btn-sm" href="index.php">Volver</a>
+            <a class="btn btn-outline-light btn-sm" href="../index.php">Volver</a>
         </div>
     </nav>
 
     <main class="container px-4 py-5 px-md-5 my-4">
-        <h1 class="display-6 fw-bold hero-title mb-3">Todos los <span>Artistas</span></h1>
+        <h1 class="display-6 fw-bold hero-title mb-3">Todas las <span>Canciones</span></h1>
 
         <div class="card bg-glass shadow">
             <div class="card-body p-4">
-                <?php if (empty($artists)): ?>
-                    <p class="text-muted mb-0">No hay artistas todavía.</p>
+                <?php if (empty($songs)): ?>
+                    <p class="text-muted mb-0">No hay canciones todavía.</p>
                 <?php else: ?>
                     <div class="row g-3">
-                        <?php foreach ($artists as $a): ?>
+                        <?php foreach ($songs as $s): ?>
                             <div class="col-12 col-sm-6 col-lg-3">
-                                <a href="artist.php?id=<?= (int)$a['id'] ?>" class="text-decoration-none text-dark">
+                                <a href="song.php?id=<?= (int)$s['id'] ?>" class="text-decoration-none text-dark">
                                     <div class="card h-100 media-card">
-                                        <?php if (!empty($a['image_url'])): ?>
-                                            <img class="card-img-top" src="<?= htmlspecialchars($a['image_url']) ?>" alt="img">
+                                        <?php if (!empty($s['display_image'])): ?>
+                                            <img class="card-img-top" src="<?= htmlspecialchars($s['display_image']) ?>" alt="img">
                                         <?php else: ?>
                                             <div class="media-placeholder">Sin imagen</div>
                                         <?php endif; ?>
                                         <div class="card-body">
-                                            <h3 class="h6 fw-semibold mb-0"><?= htmlspecialchars($a['name']) ?></h3>
+                                            <h3 class="h6 fw-semibold mb-1"><?= htmlspecialchars($s['title']) ?></h3>
+                                            <div class="small text-muted">
+                                                <?= htmlspecialchars($s['artist_name']) ?>
+                                                <?= !empty($s['album_title']) ? ' · ' . htmlspecialchars($s['album_title']) : '' ?>
+                                            </div>
                                         </div>
                                     </div>
                                 </a>

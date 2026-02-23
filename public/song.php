@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../db.php';
 
 $song_id = (int)($_GET['id'] ?? 0);
 if ($song_id <= 0) {
@@ -90,7 +90,7 @@ function fmt_duration($sec)
     <nav class="navbar navbar-dark bg-dark py-3">
         <div class="container">
             <a class="navbar-brand" href="index.php">MusicAll</a>
-            <a class="btn btn-outline-light btn-sm" href="songs.php">Volver</a>
+            <a class="btn btn-outline-light btn-sm" href="../index.php">Volver</a>
         </div>
     </nav>
 
