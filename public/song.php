@@ -1,16 +1,16 @@
 <?php
-session_start();
-require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../partials/app.php';
+$GLOBALS['BASE_HOME'] = '/MusicAll/index.php';
 
 $song_id = (int)($_GET['id'] ?? 0);
 if ($song_id <= 0) {
-    header("Location: songs.php");
+    header("Location: /MusicAll/index.php");
     exit;
 }
 
 $stmt = $conn->prepare("
   SELECT
-    s.id, s.title, s.duration_sec, s.audio_url, s.created_at,
+    s.id, s.title, s.duration_sec, s.audio_url,
     ar.id AS artist_id, ar.name AS artist_name, ar.image_url AS artist_image,
     al.id AS album_id, al.title AS album_title, al.cover_url AS album_cover,
     COALESCE(s.image_url, al.cover_url, ar.image_url) AS display_image
@@ -26,17 +26,8 @@ $song = $res ? $res->fetch_assoc() : null;
 $stmt->close();
 
 if (!$song) {
-    header("Location: songs.php");
+    header("Location: /MusicAll/index.php");
     exit;
-}
-
-function fmt_duration($sec)
-{
-    if ($sec === null || $sec === '' || (int)$sec <= 0) return '—';
-    $sec = (int)$sec;
-    $m = intdiv($sec, 60);
-    $s = $sec % 60;
-    return sprintf("%d:%02d", $m, $s);
 }
 ?>
 <!DOCTYPE html>
@@ -69,6 +60,13 @@ function fmt_duration($sec)
             border: 1px solid rgba(255, 255, 255, .35);
         }
 
+        .cover {
+            width: 100%;
+            max-height: 340px;
+            object-fit: cover;
+            border-radius: 16px;
+        }
+
         .hero-title {
             color: var(--t1);
         }
@@ -76,23 +74,11 @@ function fmt_duration($sec)
         .hero-title span {
             color: var(--t2);
         }
-
-        .cover {
-            width: 100%;
-            max-height: 340px;
-            object-fit: cover;
-            border-radius: 16px;
-        }
     </style>
 </head>
 
 <body>
-    <nav class="navbar navbar-dark bg-dark py-3">
-        <div class="container">
-            <a class="navbar-brand" href="index.php">MusicAll</a>
-            <a class="btn btn-outline-light btn-sm" href="../index.php">Volver</a>
-        </div>
-    </nav>
+    <?php require __DIR__ . '/../partials/header.php'; ?>
 
     <main class="container px-4 py-5 px-md-5 my-4">
         <div class="row g-4">
@@ -105,11 +91,11 @@ function fmt_duration($sec)
 
                         <h1 class="h4 fw-bold mb-1"><?= htmlspecialchars($song['title']) ?></h1>
                         <div class="text-muted mb-3">
-                            <a class="text-decoration-none" href="artist.php?id=<?= (int)$song['artist_id'] ?>">
+                            <a class="text-decoration-none" href="/MusicAll/public/artist.php?id=<?= (int)$song['artist_id'] ?>">
                                 <?= htmlspecialchars($song['artist_name']) ?>
                             </a>
                             <?php if (!empty($song['album_id'])): ?>
-                                · <a class="text-decoration-none" href="album.php?id=<?= (int)$song['album_id'] ?>">
+                                · <a class="text-decoration-none" href="/MusicAll/public/album.php?id=<?= (int)$song['album_id'] ?>">
                                     <?= htmlspecialchars($song['album_title']) ?>
                                 </a>
                             <?php endif; ?>
@@ -123,17 +109,38 @@ function fmt_duration($sec)
                         <hr>
 
                         <div class="fw-semibold mb-2">Reproducción</div>
-                        <?php if (!empty($song['audio_url'])): ?>
-                            <audio controls class="w-100">
-                                <source src="<?= htmlspecialchars($song['audio_url']) ?>" type="audio/mpeg">
-                                Tu navegador no soporta audio HTML5.
-                            </audio>
-                            <div class="small text-muted mt-2">Si el audio no carga, revisa que `audio_url` sea accesible.</div>
-                        <?php else: ?>
-                            <div class="alert alert-warning mb-0">
-                                Esta canción aún no tiene audio asignado (campo <code>audio_url</code> vacío).
+
+                        <?php if (!$user): ?>
+                            <div class="alert alert-info mb-0">
+                                Inicia sesión para usar el reproductor.
+                                <div class="mt-2">
+                                    <a class="btn btn-sm btn-primary" href="/MusicAll/iniciarSesion.php">Iniciar sesión</a>
+                                </div>
                             </div>
+                        <?php else: ?>
+                            <?php if (!empty($song['audio_url'])): ?>
+                                <button
+                                    class="btn btn-primary w-100"
+                                    type="button"
+                                    onclick='MusicAllPlayer.playTrack(<?= json_encode([
+                                                                            "id" => (int)$song["id"],
+                                                                            "title" => $song["title"],
+                                                                            "subtitle" => trim(($song["artist_name"] ?? "") . (!empty($song["album_title"]) ? " · " . $song["album_title"] : "")),
+                                                                            "image" => $song["display_image"] ?? "",
+                                                                            "audio_url" => $song["audio_url"]
+                                                                        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>)'>
+                                    ▶ Reproducir en el reproductor
+                                </button>
+                                <div class="small text-muted mt-2">
+                                    Nota: el enlace suele ser un “preview” (por ejemplo iTunes preview).
+                                </div>
+                            <?php else: ?>
+                                <div class="alert alert-warning mb-0">
+                                    Esta canción aún no tiene audio asignado (campo <code>audio_url</code> vacío).
+                                </div>
+                            <?php endif; ?>
                         <?php endif; ?>
+
                     </div>
                 </div>
             </div>
@@ -149,14 +156,12 @@ function fmt_duration($sec)
                             <li class="list-group-item d-flex justify-content-between">
                                 <span class="text-muted">Artista</span>
                                 <span class="fw-semibold">
-                                    <a class="text-decoration-none" href="artist.php?id=<?= (int)$song['artist_id'] ?>"><?= htmlspecialchars($song['artist_name']) ?></a>
+                                    <a class="text-decoration-none" href="/MusicAll/public/artist.php?id=<?= (int)$song['artist_id'] ?>"><?= htmlspecialchars($song['artist_name']) ?></a>
                                 </span>
                             </li>
                             <li class="list-group-item d-flex justify-content-between">
                                 <span class="text-muted">Álbum</span>
-                                <span class="fw-semibold">
-                                    <?= !empty($song['album_id']) ? htmlspecialchars($song['album_title']) : '—' ?>
-                                </span>
+                                <span class="fw-semibold"><?= !empty($song['album_id']) ? htmlspecialchars($song['album_title']) : '—' ?></span>
                             </li>
                             <li class="list-group-item d-flex justify-content-between">
                                 <span class="text-muted">Duración</span><span class="fw-semibold"><?= htmlspecialchars(fmt_duration($song['duration_sec'])) ?></span>
@@ -171,6 +176,8 @@ function fmt_duration($sec)
             </div>
         </div>
     </main>
+
+    <?php require __DIR__ . '/../partials/player.php'; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>

@@ -3,10 +3,23 @@ session_start();
 require_once __DIR__ . '/db.php';
 
 $errors = [];
+$next = trim($_GET['next'] ?? '');
+if ($next === '') $next = 'index.php';
+
+// Evitar redirecciones raras: solo permitimos rutas internas simples
+if (preg_match('/^https?:\/\//i', $next)) {
+    $next = 'index.php';
+}
+if (str_contains($next, "\n") || str_contains($next, "\r")) {
+    $next = 'index.php';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
+    $nextPost = trim($_POST['next'] ?? 'index.php');
+
+    if ($nextPost !== '') $next = $nextPost;
 
     if ($username === '') $errors[] = "Introduce tu usuario.";
     if ($password === '') $errors[] = "Introduce tu contraseña.";
@@ -22,19 +35,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$user || !password_verify($password, $user['password'])) {
             $errors[] = "Usuario o contraseña incorrectos.";
         } else {
-            // ✅ Si es admin, NO le dejamos entrar por el login de usuarios
+            // Admin no entra por login de usuarios
             if (($user['role'] ?? 'user') === 'admin') {
                 $errors[] = "Este acceso es solo para usuarios. Usa el acceso de administrador.";
             } else {
-                // Login usuario normal OK
                 $_SESSION['user'] = [
                     'id' => (int)$user['id'],
                     'username' => $user['username'],
                     'email' => $user['email'],
                     'role' => $user['role']
                 ];
-
-                header("Location: index.php");
+                header("Location: " . $next);
                 exit;
             }
         }
@@ -165,7 +176,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             <?php endif; ?>
 
-                            <form method="post" action="iniciarSesion.php" autocomplete="off">
+                            <form method="post" action="iniciarSesion.php?next=<?= urlencode($next) ?>" autocomplete="off">
+                                <input type="hidden" name="next" value="<?= htmlspecialchars($next) ?>">
+
                                 <div class="mb-3">
                                     <label class="form-label" for="username">Usuario</label>
                                     <input type="text" id="username" name="username" class="form-control"
@@ -182,7 +195,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </button>
                             </form>
 
-                            <!-- ✅ Enlace a login admin -->
                             <div class="text-center">
                                 <a href="admin/login.php" class="text-decoration-none fw-semibold">
                                     ¿Eres administrador?
@@ -197,8 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </section>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
 
 </html>

@@ -2,27 +2,7 @@
 session_start();
 require_once __DIR__ . '/../db.php';
 
-$genres = [];
-$res = $conn->query("SELECT DISTINCT genre FROM songs WHERE genre IS NOT NULL AND genre <> '' ORDER BY genre ASC");
-if ($res) $genres = array_map(fn($r) => $r['genre'], $res->fetch_all(MYSQLI_ASSOC));
-
-$genre = trim($_GET['genre'] ?? '');
-$q = trim($_GET['q'] ?? '');
-
-$songs = [];
-$res = $conn->query("
-  SELECT
-    s.id, s.title,
-    ar.name AS artist_name,
-    al.title AS album_title,
-    COALESCE(s.image_url, al.cover_url, ar.image_url) AS display_image
-  FROM songs s
-  JOIN artists ar ON ar.id = s.artist_id
-  LEFT JOIN albums al ON al.id = s.album_id
-  ORDER BY s.created_at DESC
-  LIMIT 60
-");
-if ($res) $songs = $res->fetch_all(MYSQLI_ASSOC);
+$user = $_SESSION['user'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -61,66 +41,49 @@ if ($res) $songs = $res->fetch_all(MYSQLI_ASSOC);
         .hero-title span {
             color: var(--t2);
         }
-
-        .media-card img {
-            height: 160px;
-            object-fit: cover;
-        }
-
-        .media-placeholder {
-            height: 160px;
-            background: rgba(0, 0, 0, .05);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #666;
-            font-weight: 600;
-        }
     </style>
 </head>
 
 <body>
+
     <nav class="navbar navbar-dark bg-dark py-3">
         <div class="container">
-            <a class="navbar-brand" href="index.php">MusicAll</a>
-            <a class="btn btn-outline-light btn-sm" href="../index.php">Volver</a>
+            <a class="navbar-brand" href="../index.php">MusicAll</a>
+
+            <div class="d-flex align-items-center gap-2">
+                <a class="btn btn-outline-light btn-sm" href="../index.php">Inicio</a>
+                <?php if (!$user): ?>
+                    <a class="btn btn-primary btn-sm" href="../iniciarSesion.php">Iniciar sesión</a>
+                <?php else: ?>
+                    <span class="text-white-50 small">Hola, <?= htmlspecialchars($user['username']) ?></span>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">Explora</button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="../index.php#generos">Géneros</a></li>
+                            <li><a class="dropdown-item" href="artists.php">Artistas</a></li>
+                            <li><a class="dropdown-item" href="albums.php">Álbumes</a></li>
+                            <li><a class="dropdown-item" href="concerts.php">Conciertos</a></li>
+                        </ul>
+                    </div>
+                    <a class="btn btn-danger btn-sm" href="../logout.php">Salir</a>
+                <?php endif; ?>
+            </div>
         </div>
     </nav>
 
     <main class="container px-4 py-5 px-md-5 my-4">
-        <h1 class="display-6 fw-bold hero-title mb-3">Todas las <span>Canciones</span></h1>
-
         <div class="card bg-glass shadow">
             <div class="card-body p-4">
-                <?php if (empty($songs)): ?>
-                    <p class="text-muted mb-0">No hay canciones todavía.</p>
-                <?php else: ?>
-                    <div class="row g-3">
-                        <?php foreach ($songs as $s): ?>
-                            <div class="col-12 col-sm-6 col-lg-3">
-                                <a href="song.php?id=<?= (int)$s['id'] ?>" class="text-decoration-none text-dark">
-                                    <div class="card h-100 media-card">
-                                        <?php if (!empty($s['display_image'])): ?>
-                                            <img class="card-img-top" src="<?= htmlspecialchars($s['display_image']) ?>" alt="img">
-                                        <?php else: ?>
-                                            <div class="media-placeholder">Sin imagen</div>
-                                        <?php endif; ?>
-                                        <div class="card-body">
-                                            <h3 class="h6 fw-semibold mb-1"><?= htmlspecialchars($s['title']) ?></h3>
-                                            <div class="small text-muted">
-                                                <?= htmlspecialchars($s['artist_name']) ?>
-                                                <?= !empty($s['album_title']) ? ' · ' . htmlspecialchars($s['album_title']) : '' ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
+                <h1 class="display-6 fw-bold hero-title mb-2">Canciones <span>(deshabilitado)</span></h1>
+                <p class="text-muted mb-4">
+                    La vista “ver todas las canciones” se ha desactivado para evitar lentitud.
+                    Desde el inicio puedes acceder a canciones desde las listas por género o canciones destacadas.
+                </p>
+                <a class="btn btn-primary" href="../index.php">Volver al inicio</a>
             </div>
         </div>
     </main>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
 

@@ -1,0 +1,101 @@
+.player {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 72px;
+    background: #10151b;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    z-index: 9999;
+    border-top: 1px solid rgba(255, 255, 255, .08);
+}
+
+.player__left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 260px;
+}
+
+.player__cover {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #222;
+}
+
+.player__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.player__title {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.player__artist {
+    font-size: 12px;
+    opacity: .8;
+}
+
+.player__center {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player__btn {
+    background: #1b2530;
+    border: 1px solid rgba(255, 255, 255, .10);
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.player__btn:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+.player__btn--main {
+    width: 46px;
+    height: 46px;
+    font-size: 18px;
+}
+
+.player__right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 360px;
+}
+
+.player__time {
+    font-size: 12px;
+    opacity: .8;
+    width: 42px;
+    text-align: center;
+}
+
+.player__seek {
+    flex: 1;
+}
+
+.player__vol {
+    width: 90px;
+}
+
+body {
+    padding-bottom: 80px;
+}
+
+/* para que no tape contenido */
