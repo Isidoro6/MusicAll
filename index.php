@@ -229,7 +229,7 @@ if ($stmt) $stmt->close();
         .track-dur {
             font-size: 12px;
             color: #6c757d;
-            width: 42px;
+            width: 420px;
             text-align: right;
         }
 
@@ -364,9 +364,9 @@ if ($stmt) $stmt->close();
                                                     </div>
 
                                                     <div class="track-right">
-                                                        <div class="track-dur"><?= htmlspecialchars(fmt_duration($row['duration_sec'])) ?></div>
+                                                        <div class="track-dur"><p>Duración:</p><?= htmlspecialchars(fmt_duration($row['duration_sec'])) ?></div>
 
-                                                        <a class="btn btn-sm btn-outline-secondary" href="/MusicAll/public/song.php?id=<?= (int)$row['id'] ?>">Ver</a>
+                                                    <!--  <a class="btn btn-sm btn-outline-secondary" href="/MusicAll/public/song.php?id=<?= (int)$row['id'] ?>">Ver</a> -->
 
                                                         <?php if ($user && !empty($row['audio_url'])): ?>
                                                             <button
@@ -378,7 +378,7 @@ if ($stmt) $stmt->close();
                                                                                                         "subtitle" => trim(($row["artist_name"] ?? "") . (!empty($row["album_title"]) ? " · " . $row["album_title"] : "")),
                                                                                                         "image" => $row["display_image"] ?? "",
                                                                                                         "audio_url" => $row["audio_url"]
-                                                                                                    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>)'>▶</button>
+                                                                                                    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>)'>▶</button>     
                                                         <?php elseif (!$user): ?>
                                                             <a class="btn btn-sm btn-outline-primary" href="/MusicAll/iniciarSesion.php">Login</a>
                                                         <?php endif; ?>

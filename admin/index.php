@@ -100,7 +100,7 @@ require_once __DIR__ . '/auth.php';
                         <div class="card-body">
                             <h5 class="fw-semibold">Artistas</h5>
                             <p class="text-muted mb-3">Crear / editar / borrar artistas.</p>
-                            <a class="btn btn-primary w-100" href="artists.php">Gestionar</a>
+                            <a class="btn btn-primary w-100" href="/admin/artists.php">Gestionar</a>
 
                         </div>
                     </div>
