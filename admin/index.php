@@ -1,18 +1,33 @@
 <?php
 require_once __DIR__ . '/auth.php';
+
+$section = trim($_GET['section'] ?? 'artists');
+$allowed = ['artists', 'albums', 'songs', 'concerts', 'shop'];
+if (!in_array($section, $allowed, true)) $section = 'artists';
+
+function isActive($current, $value)
+{
+    return $current === $value ? 'active' : '';
+}
+
+$map = [
+    'artists'  => __DIR__ . '/pages/artists.php',
+    'albums'   => __DIR__ . '/pages/albums.php',
+    'songs'    => __DIR__ . '/pages/songs.php',
+    'concerts' => __DIR__ . '/pages/concerts.php',
+    'shop'     => __DIR__ . '/pages/shop.php',
+];
+$view = $map[$section];
 ?>
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Admin | MusicAll</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Admin | MusicAll</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
-        crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 
     <style>
         :root {
@@ -41,16 +56,6 @@ require_once __DIR__ . '/auth.php';
             background-attachment: fixed;
         }
 
-        .page-wrap {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        main {
-            flex: 1;
-        }
-
         .bg-glass {
             background-color: hsla(0, 0%, 100%, 0.92) !important;
             backdrop-filter: saturate(200%) blur(25px);
@@ -68,94 +73,108 @@ require_once __DIR__ . '/auth.php';
         .text-soft {
             color: var(--soft);
         }
+
+        .admin-shell {
+            min-height: 100vh;
+            display: flex;
+            gap: 24px;
+            padding: 28px 18px;
+        }
+
+        .admin-sidebar {
+            width: 260px;
+            flex: 0 0 260px;
+        }
+
+        .admin-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sidebar-title {
+            color: var(--t1);
+            font-weight: 700;
+            font-size: 1.15rem;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-card {
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .list-group-item.active {
+            background: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
     </style>
 </head>
 
 <body>
-    <div class="page-wrap">
 
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-3">
-            <div class="container">
-                <a class="navbar-brand" href="../index.php">MusicAll</a>
-                <div class="ms-auto d-flex gap-2">
-                    <a class="btn btn-outline-light btn-sm" href="../index.php">Volver</a>
-                    <a class="btn btn-danger btn-sm" href="../logout.php">Cerrar sesión</a>
+    <div class="container-fluid admin-shell">
+
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="mb-3">
+                <div class="sidebar-title">MusicAll Admin</div>
+                <div class="text-soft opacity-75 small">Panel de gestión</div>
+            </div>
+
+            <div class="card bg-glass shadow sidebar-card">
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a class="list-group-item list-group-item-action <?= isActive($section, 'artists') ?>"
+                            href="index.php?section=artists">Artistas</a>
+
+                        <a class="list-group-item list-group-item-action <?= isActive($section, 'albums') ?>"
+                            href="index.php?section=albums">Álbumes</a>
+
+                        <a class="list-group-item list-group-item-action <?= isActive($section, 'songs') ?>"
+                            href="index.php?section=songs">Canciones</a>
+
+                        <a class="list-group-item list-group-item-action <?= isActive($section, 'concerts') ?>"
+                            href="index.php?section=concerts">Conciertos</a>
+
+                        <a class="list-group-item list-group-item-action <?= isActive($section, 'shop') ?>"
+                            href="index.php?section=shop">Tienda</a>
+                    </div>
                 </div>
             </div>
-        </nav>
 
-        <main class="container px-4 py-5 px-md-5 my-4">
-            <div class="row g-4">
-                <div class="col-12">
-                    <h1 class="display-6 fw-bold hero-title">
-                        Panel <span>Administrador</span>
-                    </h1>
-                    <p class="text-soft opacity-75 mb-0">
-                        Desde aquí vas a poder gestionar artistas, canciones, conciertos, entradas y productos.
-                    </p>
+            <div class="mt-3 d-grid gap-2">
+                <a class="btn btn-outline-light" href="../index.php">Volver</a>
+                <a class="btn btn-danger" href="../logout.php">Cerrar sesión</a>
+            </div>
+        </aside>
+
+        <!-- Content -->
+        <main class="admin-content">
+            <div class="mb-3">
+                <h1 class="display-6 fw-bold hero-title mb-1">
+                    Panel <span>Administrador</span>
+                </h1>
+                <div class="text-soft opacity-75">
+                    Gestiona el contenido de MusicAll desde un único panel.
                 </div>
+            </div>
 
-                <div class="col-md-6 col-lg-4">
-                    <div class="card bg-glass shadow h-100">
-                        <div class="card-body">
-                            <h5 class="fw-semibold">Artistas</h5>
-                            <p class="text-muted mb-3">Crear / editar / borrar artistas.</p>
-                            <a class="btn btn-primary w-100" href="/admin/artists.php">Gestionar</a>
-
-                        </div>
-                    </div>
+            <div class="card bg-glass shadow">
+                <div class="card-body p-4">
+                    <?php include $view; ?>
                 </div>
-
-                <div class="col-md-6 col-lg-4">
-                    <div class="card bg-glass shadow h-100">
-                        <div class="card-body">
-                            <h5 class="fw-semibold">Canciones</h5>
-                            <p class="text-muted mb-3">Añadir canciones y audio/URL.</p>
-                            <a class="btn btn-primary w-100" href="songs.php">Gestionar</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-lg-4">
-                    <div class="card bg-glass shadow h-100">
-                        <div class="card-body">
-                            <h5 class="fw-semibold">Conciertos</h5>
-                            <p class="text-muted mb-3">Eventos y tipos de entrada.</p>
-                            <a class="btn btn-primary w-100 disabled" href="#">Gestionar</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-lg-4">
-                    <div class="card bg-glass shadow h-100">
-                        <div class="card-body">
-                            <h5 class="fw-semibold">Productos</h5>
-                            <p class="text-muted mb-3">CDs, vinilos y stock.</p>
-                            <a class="btn btn-primary w-100 disabled" href="#">Gestionar</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-lg-4">
-                    <div class="card bg-glass shadow h-100">
-                        <div class="card-body">
-                            <h5 class="fw-semibold">Albumes</h5>
-                            <p class="text-muted mb-3">Crear, editar y borrar álbumes.</p>
-                            <a class="btn btn-primary w-100" href="albums.php">Gestionar</a>
-                        </div>
-                    </div>
-                </div>
-
             </div>
         </main>
 
-        <footer class="bg-dark text-light mt-auto">
-            <div class="container py-4 border-top">
-                <small class="text-muted">© <?= date('Y') ?> MusicAll — Panel Admin</small>
-            </div>
-        </footer>
-
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
 
 </html>

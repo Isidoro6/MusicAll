@@ -15,17 +15,16 @@ $res = $conn->query("SELECT id, name FROM artists ORDER BY name ASC");
 if ($res) $artists = $res->fetch_all(MYSQLI_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $postedToken = $_POST['csrf_token'] ?? '';
-    if (!hash_equals($_SESSION['csrf_token'], $postedToken)) {
-        $errors[] = "Token inválido. Refresca la página e inténtalo de nuevo.";
+    if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'] ?? '')) {
+        $errors[] = "Token inválido.";
     } else {
         $title = trim($_POST['title'] ?? '');
-        $artist_id = (int)($_POST['artist_id'] ?? 0);
+        $artist_id_int = (int)($_POST['artist_id'] ?? 0);
         $release_date = trim($_POST['release_date'] ?? '');
         $cover_url = trim($_POST['cover_url'] ?? '');
 
         if ($title === '' || mb_strlen($title) < 2) $errors[] = "El título debe tener al menos 2 caracteres.";
-        if ($artist_id <= 0) $errors[] = "Selecciona un artista.";
+        if ($artist_id_int <= 0) $errors[] = "Selecciona un artista.";
         if ($release_date !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $release_date)) {
             $errors[] = "La fecha debe estar en formato YYYY-MM-DD.";
         }
@@ -34,17 +33,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $dateForDb = ($release_date === '') ? null : $release_date;
 
             $stmt = $conn->prepare("INSERT INTO albums (artist_id, title, release_date, cover_url) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("isss", $artist_id, $title, $dateForDb, $cover_url);
+            $stmt->bind_param("isss", $artist_id_int, $title, $dateForDb, $cover_url);
 
             if ($stmt->execute()) {
                 $stmt->close();
-                header("Location: albums.php?success=" . urlencode("Álbum creado correctamente."));
+                header("Location: index.php?section=albums");
                 exit;
-            } else {
-                $errors[] = "Error al crear: " . $conn->error;
             }
             $stmt->close();
+            $errors[] = "Error al crear: " . $conn->error;
         }
+
+        $artist_id = (string)$artist_id_int;
     }
 }
 ?>
@@ -55,9 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nuevo álbum | Admin</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-
     <style>
         :root {
             --bg1: hsl(218, 41%, 15%);
@@ -97,21 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-3">
-        <div class="container">
-            <a class="navbar-brand" href="../index.php">MusicAll</a>
-            <div class="ms-auto d-flex gap-2">
-                <a class="btn btn-outline-light btn-sm" href="albums.php">Volver</a>
-                <a class="btn btn-danger btn-sm" href="../logout.php">Cerrar sesión</a>
-            </div>
-        </div>
-    </nav>
-
     <main class="container px-4 py-5 px-md-5 my-4">
         <div class="row g-4">
             <div class="col-12">
                 <h1 class="display-6 fw-bold hero-title">Nuevo <span>Álbum</span></h1>
-                <p class="text-soft opacity-75 mb-0">Este cover se usará como imagen por defecto de canciones sin imagen.</p>
+                <p class="text-soft opacity-75 mb-0">Añade un álbum y asócialo a un artista.</p>
             </div>
 
             <div class="col-12 col-lg-8">
@@ -120,9 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <?php if ($errors): ?>
                             <div class="alert alert-danger">
-                                <ul class="mb-0">
-                                    <?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?>
-                                </ul>
+                                <ul class="mb-0"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul>
                             </div>
                         <?php endif; ?>
 
@@ -159,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                             <div class="d-flex gap-2 mt-4">
                                 <button class="btn btn-primary" type="submit">Guardar</button>
-                                <a class="btn btn-outline-secondary" href="albums.php">Cancelar</a>
+                                <a class="btn btn-outline-secondary" href="index.php?section=albums">Cancelar</a>
                             </div>
 
                         </form>
@@ -167,7 +153,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
             </div>
-
         </div>
     </main>
 

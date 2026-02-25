@@ -7,11 +7,10 @@ $csrf = $_SESSION['csrf_token'];
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) {
-    header("Location: songs.php?error=" . urlencode("ID inválido."));
+    header("Location: index.php?section=songs");
     exit;
 }
 
-// Cargar canción
 $stmt = $conn->prepare("SELECT * FROM songs WHERE id = ? LIMIT 1");
 $stmt->bind_param("i", $id);
 $stmt->execute();
@@ -20,7 +19,7 @@ $song = $res ? $res->fetch_assoc() : null;
 $stmt->close();
 
 if (!$song) {
-    header("Location: songs.php?error=" . urlencode("Canción no encontrada."));
+    header("Location: index.php?section=songs");
     exit;
 }
 
@@ -31,7 +30,6 @@ $duration_sec = $song['duration_sec'];
 $image_url = $song['image_url'] ?? '';
 $audio_url = $song['audio_url'] ?? '';
 
-// Selects
 $artists = [];
 $albums = [];
 
@@ -47,9 +45,8 @@ $res = $conn->query("
 if ($res) $albums = $res->fetch_all(MYSQLI_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $postedToken = $_POST['csrf_token'] ?? '';
-    if (!hash_equals($_SESSION['csrf_token'], $postedToken)) {
-        $errors[] = "Token inválido. Refresca la página e inténtalo de nuevo.";
+    if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'] ?? '')) {
+        $errors[] = "Token inválido.";
     } else {
         $title = trim($_POST['title'] ?? '');
         $artist_id_int = (int)($_POST['artist_id'] ?? 0);
@@ -68,10 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!$errors) {
             $stmt = $conn->prepare("
-        UPDATE songs
-        SET artist_id = ?, album_id = ?, title = ?, duration_sec = ?, image_url = ?, audio_url = ?
-        WHERE id = ?
-      ");
+              UPDATE songs
+              SET artist_id = ?, album_id = ?, title = ?, duration_sec = ?, image_url = ?, audio_url = ?
+              WHERE id = ?
+            ");
             $stmt->bind_param(
                 "iisissi",
                 $artist_id_int,
@@ -85,12 +82,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($stmt->execute()) {
                 $stmt->close();
-                header("Location: songs.php?success=" . urlencode("Canción actualizada."));
+                header("Location: index.php?section=songs");
                 exit;
-            } else {
-                $errors[] = "Error al actualizar: " . $conn->error;
             }
             $stmt->close();
+            $errors[] = "Error al actualizar: " . $conn->error;
         }
 
         $artist_id = (string)$artist_id_int;
@@ -104,9 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Editar canción | Admin</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-
     <style>
         :root {
             --bg1: hsl(218, 41%, 15%);
@@ -146,16 +140,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-3">
-        <div class="container">
-            <a class="navbar-brand" href="../index.php">MusicAll</a>
-            <div class="ms-auto d-flex gap-2">
-                <a class="btn btn-outline-light btn-sm" href="songs.php">Volver</a>
-                <a class="btn btn-danger btn-sm" href="../logout.php">Cerrar sesión</a>
-            </div>
-        </div>
-    </nav>
-
     <main class="container px-4 py-5 px-md-5 my-4">
         <div class="row g-4">
             <div class="col-12">
@@ -169,9 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <?php if ($errors): ?>
                             <div class="alert alert-danger">
-                                <ul class="mb-0">
-                                    <?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?>
-                                </ul>
+                                <ul class="mb-0"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul>
                             </div>
                         <?php endif; ?>
 
@@ -213,19 +195,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <input class="form-control" id="duration_sec" name="duration_sec" inputmode="numeric" value="<?= htmlspecialchars((string)$duration_sec) ?>">
                                 </div>
                                 <div class="col-md-8">
-                                    <label class="form-label" for="image_url">Imagen de la canción (URL opcional)</label>
+                                    <label class="form-label" for="image_url">Imagen (URL opcional)</label>
                                     <input class="form-control" id="image_url" name="image_url" value="<?= htmlspecialchars($image_url) ?>" placeholder="https://...">
                                 </div>
                             </div>
 
                             <div class="mt-3">
-                                <label class="form-label" for="audio_url">Audio (URL opcional, para más adelante)</label>
+                                <label class="form-label" for="audio_url">Audio (URL opcional)</label>
                                 <input class="form-control" id="audio_url" name="audio_url" value="<?= htmlspecialchars($audio_url) ?>" placeholder="https://...">
                             </div>
 
                             <div class="d-flex gap-2 mt-4">
                                 <button class="btn btn-primary" type="submit">Guardar cambios</button>
-                                <a class="btn btn-outline-secondary" href="songs.php">Cancelar</a>
+                                <a class="btn btn-outline-secondary" href="index.php?section=songs">Cancelar</a>
                             </div>
 
                         </form>
@@ -233,7 +215,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
             </div>
-
         </div>
     </main>
 

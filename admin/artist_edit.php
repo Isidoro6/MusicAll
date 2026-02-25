@@ -7,7 +7,7 @@ $csrf = $_SESSION['csrf_token'];
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) {
-    header("Location: artists.php?error=" . urlencode("ID inválido."));
+    header("Location: index.php?section=artists");
     exit;
 }
 
@@ -19,18 +19,17 @@ $artist = $res ? $res->fetch_assoc() : null;
 $stmt->close();
 
 if (!$artist) {
-    header("Location: artists.php?error=" . urlencode("Artista no encontrado."));
+    header("Location: index.php?section=artists");
     exit;
 }
 
-$name = $artist['name'];
+$name = $artist['name'] ?? '';
 $bio = $artist['bio'] ?? '';
 $image_url = $artist['image_url'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $postedToken = $_POST['csrf_token'] ?? '';
-    if (!hash_equals($_SESSION['csrf_token'], $postedToken)) {
-        $errors[] = "Token inválido. Refresca la página e inténtalo de nuevo.";
+    if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'] ?? '')) {
+        $errors[] = "Token inválido.";
     } else {
         $name = trim($_POST['name'] ?? '');
         $bio = trim($_POST['bio'] ?? '');
@@ -43,16 +42,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$errors) {
             $stmt = $conn->prepare("UPDATE artists SET name = ?, bio = ?, image_url = ? WHERE id = ?");
             $stmt->bind_param("sssi", $name, $bio, $image_url, $id);
-
             if ($stmt->execute()) {
                 $stmt->close();
-                header("Location: artists.php?success=" . urlencode("Artista actualizado."));
+                header("Location: index.php?section=artists");
                 exit;
-            } else {
-                if ($conn->errno === 1062) $errors[] = "Ya existe un artista con ese nombre.";
-                else $errors[] = "Error al actualizar: " . $conn->error;
             }
             $stmt->close();
+            $errors[] = "Error al actualizar.";
         }
     }
 }
@@ -64,7 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Editar artista | Admin</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 
     <style>
@@ -106,16 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-3">
-        <div class="container">
-            <a class="navbar-brand" href="../index.php">MusicAll</a>
-            <div class="ms-auto d-flex gap-2">
-                <a class="btn btn-outline-light btn-sm" href="artists.php">Volver</a>
-                <a class="btn btn-danger btn-sm" href="../logout.php">Cerrar sesión</a>
-            </div>
-        </div>
-    </nav>
-
     <main class="container px-4 py-5 px-md-5 my-4">
         <div class="row g-4">
             <div class="col-12">
@@ -126,11 +111,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="col-12 col-lg-8">
                 <div class="card bg-glass shadow">
                     <div class="card-body p-4">
+
                         <?php if ($errors): ?>
                             <div class="alert alert-danger">
-                                <ul class="mb-0">
-                                    <?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?>
-                                </ul>
+                                <ul class="mb-0"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul>
                             </div>
                         <?php endif; ?>
 
@@ -154,8 +138,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                             <div class="d-flex gap-2">
                                 <button class="btn btn-primary" type="submit">Guardar cambios</button>
-                                <a class="btn btn-outline-secondary" href="artists.php">Cancelar</a>
+                                <a class="btn btn-outline-secondary" href="index.php?section=artists">Cancelar</a>
                             </div>
+
                         </form>
 
                     </div>
