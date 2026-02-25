@@ -70,7 +70,7 @@ if ($res) $albums = $res->fetch_all(MYSQLI_ASSOC);
     <nav class="navbar navbar-dark bg-dark py-3">
         <div class="container">
             <a class="navbar-brand" href="index.php">MusicAll</a>
-            <a class="btn btn-outline-light btn-sm" href="index.php">Volver</a>
+            <a class="btn btn-outline-light btn-sm" href="../index.php">Volver</a>
         </div>
     </nav>
 
